@@ -103,7 +103,7 @@ public class ScalableGrid : MonoBehaviour
 
         // Get the extents (half size) of the collider
         Vector3 extentsMin = GetComponent<BoxCollider>().bounds.min;
-        Debug.Log(extentsMin);
+        //Debug.Log(extentsMin);
 
         // Calculate starting area
         Vector3 placementPosition = new Vector3(0f, extentsMin.y + CellPadding.y, extentsMin.z + (CellPadding.z * 2));
