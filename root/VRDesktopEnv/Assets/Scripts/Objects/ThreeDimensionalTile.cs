@@ -4,53 +4,24 @@ using System.Collections;
 using static TileBehavior;
 
 [RequireComponent(typeof(Collider))]
-public class ThreeDimensionalTile : MonoBehaviour, TileBehavior
+public class ThreeDimensionalTile : MonoBehaviour, TileBehavior, TileEvents
 {
     public bool m_registerTapEvents;
 
     [Header("items to go into global settings")]
 
-    [SerializeField]
-    private Material m_material;
-    Material TileBehavior.buttonMaterial 
-    {
-        get
-        {
-            return m_material;
-        }
-        set
-        {
-            m_material = value;
-        }
-    }
+    
 
     [SerializeField]
-    private Material m_pressedMaterial;
-    Material TileBehavior.pressedButtonMaterial
-    {
-        get
-        {
-            return m_pressedMaterial;
-        }
-        set
-        {
-            m_pressedMaterial = value;
-        }
-    }
-
-    private MeshRenderer m_renderer;
-
-    [SerializeField]
-    private float m_scaleOnInteract;
-    [SerializeField]
-    private float m_scaleTime;
+    private SO_GlobalUISettings m_uiSettings;
     private float m_originalScale;
+    private MeshRenderer m_renderer;
 
     [Header("Events")]
 
     [SerializeField]
-    private TapEvent m_tapEvent = new();
-    public TapEvent tapEvent 
+    private TileEvents.TapEvent m_tapEvent = new();
+    public TileEvents.TapEvent tapEvent 
     { 
         get
         {
@@ -63,8 +34,8 @@ public class ThreeDimensionalTile : MonoBehaviour, TileBehavior
     }
 
     [SerializeField]
-    private ExitTapEvent m_exitTapEvent = new();
-    public ExitTapEvent exitTapEvent
+    private TileEvents.ExitTapEvent m_exitTapEvent = new();
+    public TileEvents.ExitTapEvent exitTapEvent
     {
         get
         {
@@ -140,7 +111,7 @@ public class ThreeDimensionalTile : MonoBehaviour, TileBehavior
     {
         //setup
         m_renderer = GetComponent<MeshRenderer>();
-        m_renderer.material = m_material;
+        m_renderer.material = m_uiSettings.Material;
         m_originalScale = transform.localScale.x;
     }
 
@@ -148,14 +119,14 @@ public class ThreeDimensionalTile : MonoBehaviour, TileBehavior
     {
         //if we are registering events, dont do anything
         if (!m_registerTapEvents) { return; }
-        Vector3 scaledVector = new Vector3(m_scaleOnInteract, m_scaleOnInteract, m_scaleOnInteract);
-        StartCoroutine(ScaleOverSeconds(m_scaleOnInteract, false, m_scaleTime));
+        Vector3 scaledVector = new Vector3(m_uiSettings.ScaleOnInteract, m_uiSettings.ScaleOnInteract, m_uiSettings.ScaleOnInteract);
+        StartCoroutine(ScaleOverSeconds(m_uiSettings.ScaleOnInteract, false, m_uiSettings.ScaleTime));
 
         //transition to new color
-        StartCoroutine(TransitionToMaterial(m_material, m_pressedMaterial, m_scaleTime));
+        StartCoroutine(TransitionToMaterial(m_uiSettings.Material, m_uiSettings.PressedMaterial, m_uiSettings.ScaleTime));
 
         //invoke the event
-        TapEventData eventData = new TapEventData(other.gameObject, this);
+        TileEvents.TapEventData eventData = new TileEvents.TapEventData(other.gameObject, this);
         m_tapEvent.Invoke(eventData);
     }
 
@@ -171,10 +142,10 @@ public class ThreeDimensionalTile : MonoBehaviour, TileBehavior
     {
         //if we are registering events, dont do anything
         if (!m_registerTapEvents) { return; }
-        StartCoroutine(ScaleOverSeconds(m_originalScale, true, m_scaleTime));
+        StartCoroutine(ScaleOverSeconds(m_originalScale, true, m_uiSettings.ScaleTime));
 
         //invert and go back to normal
-        StartCoroutine(TransitionToMaterial(m_pressedMaterial, m_material, m_scaleTime));
+        StartCoroutine(TransitionToMaterial(m_uiSettings.PressedMaterial, m_uiSettings.Material, m_uiSettings.ScaleTime));
 
         //invoke the event
         m_exitTapEvent.Invoke();
@@ -188,30 +159,6 @@ public class ThreeDimensionalTile : MonoBehaviour, TileBehavior
 /// </summary>
 public interface TileBehavior
 {
-    /// <summary>
-    /// Material used for the tile's button when not pressed.
-    /// </summary>
-    [SerializeField]
-    public Material buttonMaterial { get; set; }
-
-    /// <summary>
-    /// Material used for the tile's button when pressed.
-    /// </summary>
-    [SerializeField]
-    public Material pressedButtonMaterial { get; set; }
-
-    /// <summary>
-    /// Event triggered when the tile is tapped.
-    /// </summary>
-    [SerializeField]
-    public TapEvent tapEvent { get; set; }
-
-    /// <summary>
-    /// Event triggered when a tap exits the tile.
-    /// </summary>
-    [SerializeField]
-    public ExitTapEvent exitTapEvent { get; set; }
-
     /// <summary>
     /// Called when the tile is tapped. 
     /// (Implement specific functionality for tile interaction here)
@@ -229,7 +176,37 @@ public interface TileBehavior
     /// (Implement specific functionality for closing tile actions here)
     /// </summary>
     public void CloseTile();
+}
 
+public interface TileVisuals
+{
+    /// <summary>
+    /// Material used for the tile's button when not pressed.
+    /// </summary>
+    [SerializeField]
+    public Material buttonMaterial { get; set; }
+
+    /// <summary>
+    /// Material used for the tile's button when pressed.
+    /// </summary>
+    [SerializeField]
+    public Material pressedButtonMaterial { get; set; }
+}
+
+
+public interface TileEvents
+{
+    /// <summary>
+    /// Event triggered when the tile is tapped.
+    /// </summary>
+    [SerializeField]
+    public TapEvent tapEvent { get; set; }
+
+    /// <summary>
+    /// Event triggered when a tap exits the tile.
+    /// </summary>
+    [SerializeField]
+    public ExitTapEvent exitTapEvent { get; set; }
     /// <summary>
     /// Event data class containing information about a tap on a tile.
     /// </summary>
@@ -259,7 +236,6 @@ public interface TileBehavior
             this.interactedTile = interactedTile;
         }
     }
-
     /// <summary>
     /// Event class used to trigger actions when a tile is tapped.
     /// </summary>

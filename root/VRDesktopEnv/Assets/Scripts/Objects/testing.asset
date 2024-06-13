@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df4d41c78f1e3bd47aa166672f148ed5, type: 3}
+  m_Name: testing
+  m_EditorClassIdentifier: 
+  m_material: {fileID: 2100000, guid: ff4fecadb3e73e9489fd7288a5afffe6, type: 2}
+  m_pressedMaterial: {fileID: 2100000, guid: 4583f92c916f5324dac277df4d709f68, type: 2}
+  m_scaleOnInteract: 0.075
+  m_scaleTime: 0.2
