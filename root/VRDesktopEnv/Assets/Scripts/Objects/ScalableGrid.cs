@@ -1,4 +1,7 @@
+using Unity.VisualScripting;
 using UnityEngine;
+using System.Collections.Generic;
+using UnityEngine.XR.Interaction.Toolkit;
 
 [RequireComponent(typeof(Collider))]
 public class ScalableGrid : MonoBehaviour
@@ -14,13 +17,6 @@ public class ScalableGrid : MonoBehaviour
         get
         {
             return GetComponent<BoxCollider>().bounds.size;
-        }
-    }
-    private Vector3 ColliderCenter
-    {
-        get
-        {
-            return GetComponent<BoxCollider>().bounds.center;
         }
     }
 
@@ -42,6 +38,23 @@ public class ScalableGrid : MonoBehaviour
     }
 
     public VRGridData VRGrid;
+
+    [SerializeField]
+    private List<ThreeDimensionalTile> m_tiles = new List<ThreeDimensionalTile>();
+
+    public List<ThreeDimensionalTile> Tiles
+    {
+        get => m_tiles;
+        set
+        {
+            m_tiles = value;
+            SetObjects();
+        }
+    }
+
+    [SerializeField]
+    private GameObject SocketPrefab;
+
 
     public void SetupGrid(int x, int y, GameObject[] objects)
     {
@@ -74,33 +87,15 @@ public class ScalableGrid : MonoBehaviour
 
     private void Awake()
     {
-        GameObject[] children = new GameObject[transform.childCount];
-        for (int i = 0; i < transform.childCount; i ++) 
-        {
-            children[i] = transform.GetChild(i).gameObject;
-        }
+        GameObject[] children = new GameObject[m_tiles.Count];
 
         SetupGrid(TileZAmount, TileYAmount, children);
 
         SetObjects();
     }
 
-    public void Start()
-    {
-
-    }
-
-    public void FixedUpdate()
-    {
-        //debugging
-        SetObjects();
-    }
-
     private void SetObjects()
     {
-        // Find center of the collider
-        Vector3 center = ColliderCenter;
-
         // Get the extents (half size) of the collider
         Vector3 extentsMin = GetComponent<BoxCollider>().bounds.min;
         //Debug.Log(extentsMin);
@@ -117,22 +112,29 @@ public class ScalableGrid : MonoBehaviour
         {
             for (int z = 0; z < TileZAmount && counter < VRGrid.tiles.Length; z++)
             {
+                //set location for socket
                 Vector3 setPlacement = new Vector3(0f, y * sizeOfCell.y, z * sizeOfCell.z);
 
-                // Place a child object at the calculated position
-                VRGrid.tiles[counter].transform.position = placementPosition + setPlacement;
+                //instatiate socket
+                GameObject socket = InstantiateSocket();
+                socket.transform.parent = transform;
+
+                // Place a socket at the calculated position
+                socket.transform.position = placementPosition + setPlacement;
 
                 //confirms if the objects can be enabled or disabled
-                if (!VRGrid.tiles[counter].gameObject.activeSelf && IsPositionWithinCollider(VRGrid.tiles[counter].transform.position))
+                if (IsPositionWithinCollider(m_tiles[counter].transform.position))
                 {
-                    VRGrid.tiles[counter].gameObject.SetActive(true);
+                    m_tiles[counter].gameObject.SetActive(true);
                 }
 
                 counter++;
 
                 // Break out of the loop if counter exceeds tile length
                 if (counter >= VRGrid.tiles.Length)
+                {
                     break;
+                }                    
             }
         }
 
@@ -141,6 +143,11 @@ public class ScalableGrid : MonoBehaviour
         {
             VRGrid.tiles[i].gameObject.SetActive(false);
         }
+    }
+
+    private GameObject InstantiateSocket()
+    {
+        return Instantiate(SocketPrefab);
     }
 
     private bool IsPositionWithinCollider(Vector3 position)
@@ -152,8 +159,6 @@ public class ScalableGrid : MonoBehaviour
         }
         return false;
     }
-
-
 
     public struct VRGridData
     {

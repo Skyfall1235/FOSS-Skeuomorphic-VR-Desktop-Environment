@@ -1,26 +1,19 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
-using static TileBehavior;
+using UnityEngine.XR.Interaction.Toolkit;
 
 [RequireComponent(typeof(Collider))]
-public class ThreeDimensionalTile : MonoBehaviour, TileBehavior, TileEvents
+public class ThreeDimensionalTile : XRGrabInteractable, TileBehavior, TileEvents
 {
     public bool m_registerTapEvents;
-
-    [Header("items to go into global settings")]
-
-    
-
     [SerializeField]
-    private SO_GlobalUISettings m_uiSettings;
-    private float m_originalScale;
-    private MeshRenderer m_renderer;
+    protected SO_GlobalUISettings m_uiSettings;
 
     [Header("Events")]
 
     [SerializeField]
-    private TileEvents.TapEvent m_tapEvent = new();
+    protected TileEvents.TapEvent m_tapEvent = new();
     public TileEvents.TapEvent tapEvent 
     { 
         get
@@ -34,7 +27,7 @@ public class ThreeDimensionalTile : MonoBehaviour, TileBehavior, TileEvents
     }
 
     [SerializeField]
-    private TileEvents.ExitTapEvent m_exitTapEvent = new();
+    protected TileEvents.ExitTapEvent m_exitTapEvent = new();
     public TileEvents.ExitTapEvent exitTapEvent
     {
         get
@@ -49,106 +42,36 @@ public class ThreeDimensionalTile : MonoBehaviour, TileBehavior, TileEvents
 
     #region Tile Actions
 
-    public virtual void TapTile()
+    public virtual void Tap(GameObject interactor)
     {
-        //nothing here rn, but its ready to be inherited
+        //invoke the event
+        TileEvents.TapEventData eventData = new TileEvents.TapEventData(interactor.gameObject, this);
+        m_tapEvent.Invoke(eventData);
+    }
+
+    public virtual void ExitTap()
+    {
+        //invoke the event
+        m_exitTapEvent.Invoke();
     }
 
     public virtual void CloseTile()
     {
-        //nothing here rn, but its ready to be inherited
-    }
-
-    public virtual void LaunchTile()
-    {
-        //nothing here rn, but its ready to be inherited
-    }
-
-    #endregion
-
-    #region Afforadances
-    protected IEnumerator ScaleOverSeconds(float scaleIncrease, bool reversion, float seconds)
-    {
-        float elapsedTime = 0;
-        Vector3 startingScale = transform.localScale;
-        Vector3 scaleToScaleTo;
-
-        scaleToScaleTo = transform.localScale + new Vector3(scaleIncrease, scaleIncrease, scaleIncrease);
-        if (reversion)
-        {
-            scaleToScaleTo = new Vector3(m_originalScale, m_originalScale, m_originalScale);
-        }
-        
-        while (elapsedTime < seconds)
-        {
-            transform.localScale = Vector3.Lerp(startingScale, scaleToScaleTo, (elapsedTime / seconds));
-            elapsedTime += Time.deltaTime;
-            yield return new WaitForEndOfFrame();
-        }
-
-        transform.localScale = scaleToScaleTo;
-    }
-
-    protected IEnumerator TransitionToMaterial(Material startingMaterial, Material endingMaterial, float seconds)
-    {
-        float elapsedTime = 0;
-        while (elapsedTime < seconds)
-        {
-            m_renderer.material.Lerp(startingMaterial, endingMaterial, (elapsedTime / seconds));
-            elapsedTime += Time.deltaTime;
-            yield return new WaitForEndOfFrame();
-        }
-
-        // Ensure the target material is assigned at the end
-        m_renderer.material = endingMaterial;
+        throw new System.NotImplementedException();
     }
 
     #endregion
 
     #region Monobehavior Elements
 
-    protected void Awake()
+    protected override void Awake()
     {
-        //setup
-        m_renderer = GetComponent<MeshRenderer>();
-        m_renderer.material = m_uiSettings.Material;
-        m_originalScale = transform.localScale.x;
+        base.Awake();
+        GetComponent<Rigidbody>().isKinematic = true;
     }
-
-    protected virtual void OnTriggerEnter(Collider other)
+    protected override void OnDestroy()
     {
-        //if we are registering events, dont do anything
-        if (!m_registerTapEvents) { return; }
-        Vector3 scaledVector = new Vector3(m_uiSettings.ScaleOnInteract, m_uiSettings.ScaleOnInteract, m_uiSettings.ScaleOnInteract);
-        StartCoroutine(ScaleOverSeconds(m_uiSettings.ScaleOnInteract, false, m_uiSettings.ScaleTime));
-
-        //transition to new color
-        StartCoroutine(TransitionToMaterial(m_uiSettings.Material, m_uiSettings.PressedMaterial, m_uiSettings.ScaleTime));
-
-        //invoke the event
-        TileEvents.TapEventData eventData = new TileEvents.TapEventData(other.gameObject, this);
-        m_tapEvent.Invoke(eventData);
-    }
-
-    protected virtual void OnTriggerStay(Collider other)
-    {
-        //if we are registering events, dont do anything
-        if (!m_registerTapEvents) { return; }
-
-        //nothing here rn, but its ready to be inherited
-    }
-
-    protected virtual void OnTriggerExit(Collider other)
-    {
-        //if we are registering events, dont do anything
-        if (!m_registerTapEvents) { return; }
-        StartCoroutine(ScaleOverSeconds(m_originalScale, true, m_uiSettings.ScaleTime));
-
-        //invert and go back to normal
-        StartCoroutine(TransitionToMaterial(m_uiSettings.PressedMaterial, m_uiSettings.Material, m_uiSettings.ScaleTime));
-
-        //invoke the event
-        m_exitTapEvent.Invoke();
+        base.OnDestroy();
     }
 
     #endregion
@@ -163,13 +86,7 @@ public interface TileBehavior
     /// Called when the tile is tapped. 
     /// (Implement specific functionality for tile interaction here)
     /// </summary>
-    public void TapTile();
-
-    /// <summary>
-    /// Called to potentially launch functionality associated with the tile.
-    /// (Implement specific functionality for launching tile actions here)
-    /// </summary>
-    public void LaunchTile();
+    public void Tap(GameObject interactor);
 
     /// <summary>
     /// Called to potentially close or deactivate functionality associated with the tile.
@@ -192,7 +109,6 @@ public interface TileVisuals
     [SerializeField]
     public Material pressedButtonMaterial { get; set; }
 }
-
 
 public interface TileEvents
 {

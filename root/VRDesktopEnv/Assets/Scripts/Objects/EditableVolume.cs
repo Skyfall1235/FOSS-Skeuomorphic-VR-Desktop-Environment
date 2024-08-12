@@ -26,4 +26,14 @@ public class EditableVolume : MonoBehaviour
         m_scalableGrid = GetComponent<ScalableGrid>();
     }
 
+    protected void OnTriggerEnter(Collider other)
+    {
+        ThreeDimensionalTile tile = other.GetComponent<ThreeDimensionalTile>();
+        if(tile != null)
+        {
+            ThreeDimensionalTiles.Add(tile);
+            m_scalableGrid.Tiles.Add(tile);
+        }
+    }
+
 }
